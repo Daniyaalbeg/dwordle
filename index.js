@@ -7,6 +7,8 @@ import chalkAnimation from 'chalk-animation';
 import figlet from 'figlet';
 import { createSpinner } from 'nanospinner';
 import { words, wordOptions } from './words.js';
+import { readFileSync, writeFileSync } from 'fs';
+import { exit } from 'process';
 
 // Utils
 const sleep = (ms = 1000) => new Promise((r) => setTimeout(r, ms));
@@ -24,6 +26,28 @@ const attemptText = [
 	'fifth',
 	'sixth and final',
 ];
+
+const initialCheck = async () => {
+	try {
+		const fileData = readFileSync('./data.json', { encoding: 'utf8' });
+		const d = JSON.parse(fileData);
+		const currentTime = new Date();
+		if (currentTime.getDate() === new Date(d.date).getDate()) {
+			console.log(
+				chalk.red(
+					`You have already attemped this puzzle today and ${
+						d.hasWon ? 'won' : 'lost'
+					}. The word for today was ${Da(
+						currentTime
+					)}. Next puzzle is available in ${24 - currentTime.getHours()} hours.`
+				)
+			);
+			exit();
+		}
+	} catch {
+		// Do nothing i guess
+	}
+};
 
 const welcome = async () => {
 	figlet('Welcome to Dwordle', async function (err, data) {
@@ -209,10 +233,23 @@ const gameLoop = async () => {
 			console.log(gradient.passion(data));
 		});
 	}
+
+	try {
+		writeFileSync(
+			'./data.json',
+			JSON.stringify({
+				hasWon: hasWon,
+				date: new Date(),
+			})
+		);
+	} catch (e) {
+		console.log(e);
+	}
 };
 
 const main = async () => {
 	console.clear();
+	await initialCheck();
 	await welcome();
 	await rules();
 	await gameLoop();
