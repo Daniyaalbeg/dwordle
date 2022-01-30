@@ -7,8 +7,9 @@ import chalkAnimation from 'chalk-animation';
 import figlet from 'figlet';
 import { createSpinner } from 'nanospinner';
 import { words, wordOptions } from './words.js';
-import { readFileSync, writeFileSync } from 'fs';
+import { writeFileSync } from 'fs';
 import { exit } from 'process';
+import yargs from 'yargs';
 
 // Utils
 const sleep = (ms = 1000) => new Promise((r) => setTimeout(r, ms));
@@ -17,6 +18,35 @@ const sleep = (ms = 1000) => new Promise((r) => setTimeout(r, ms));
 const boardState = [[], [], [], [], [], []];
 
 const wordAttempts = [null, null, null, null, null, null];
+
+const attemptedLetters = {
+	a: 0,
+	b: 0,
+	c: 0,
+	d: 0,
+	e: 0,
+	f: 0,
+	g: 0,
+	h: 0,
+	i: 0,
+	j: 0,
+	k: 0,
+	l: 0,
+	m: 0,
+	n: 0,
+	o: 0,
+	p: 0,
+	q: 0,
+	r: 0,
+	s: 0,
+	t: 0,
+	u: 0,
+	v: 0,
+	w: 0,
+	x: 0,
+	y: 0,
+	z: 0,
+};
 
 const attemptText = [
 	'first',
@@ -27,26 +57,32 @@ const attemptText = [
 	'sixth and final',
 ];
 
+let showEmojiBoard = false;
+
+const today = new Date();
+
 const initialCheck = async () => {
-	try {
-		const fileData = readFileSync('./data.json', { encoding: 'utf8' });
-		const d = JSON.parse(fileData);
-		const currentTime = new Date();
-		if (currentTime.getDate() === new Date(d.date).getDate()) {
-			console.log(
-				chalk.red(
-					`You have already attemped this puzzle today and ${
-						d.hasWon ? 'won' : 'lost'
-					}. The word for today was ${Da(
-						currentTime
-					)}. Next puzzle is available in ${24 - currentTime.getHours()} hours.`
-				)
-			);
-			exit();
-		}
-	} catch {
-		// Do nothing i guess
-	}
+	var argv = yargs(process.argv.slice(2)).default('e', false).argv;
+	showEmojiBoard = argv.e;
+
+	// try {
+	// 	const fileData = readFileSync('./data.json', { encoding: 'utf8' });
+	// 	const d = JSON.parse(fileData);
+	// 	if (today.getDate() === new Date(d.date).getDate()) {
+	// 		console.log(
+	// 			chalk.red(
+	// 				`You have already attemped this puzzle today and ${
+	// 					d.hasWon ? 'won' : 'lost'
+	// 				}. The word for today was ${Da(today)}. Next puzzle is available in ${
+	// 					24 - today.getHours()
+	// 				} hours.`
+	// 			)
+	// 		);
+	// 		exit();
+	// 	}
+	// } catch {
+	// 	// Do nothing i guess
+	// }
 };
 
 const welcome = async () => {
@@ -106,12 +142,11 @@ const validInput = (answer) => {
 };
 
 const checkAnswer = async (answer) => {
-	const date = new Date();
 	const spinner = createSpinner('Checking word...').start();
 
 	await sleep(2000);
 
-	if (Da(date) === answer) {
+	if (Da(today) === answer) {
 		spinner.success({ text: 'Correct' });
 		return true;
 	} else {
@@ -121,34 +156,40 @@ const checkAnswer = async (answer) => {
 };
 
 const generateAnswerGrid = (i) => {
-	const date = new Date();
-	const correctWord = Da(date);
+	const correctWord = Da(today);
 	for (let j = 0; j < 5; j++) {
 		if (wordAttempts[i].split('')[j] === correctWord.split('')[j]) {
+			attemptedLetters[wordAttempts[i].split('')[j]] = 'correct';
 			boardState[i][j] = 'correct';
 		} else if (correctWord.split('').includes(wordAttempts[i].split('')[j])) {
+			if (attemptedLetters[wordAttempts[i].split('')[j]] !== 'correct') {
+				attemptedLetters[wordAttempts[i].split('')[j]] = 'somewhere';
+			}
 			boardState[i][j] = 'somewhere';
 		} else {
+			attemptedLetters[wordAttempts[i].split('')[j]] = 'incorrect';
 			boardState[i][j] = 'incorrect';
 		}
 	}
 };
 
-const printBoard = () => {
-	boardState.forEach((a, firstIndex) => {
-		if (!a.length) return;
-		console.log();
-		a.forEach((b, secondIndex) => {
-			if (b === 'correct') {
-				process.stdout.write('🟩');
-			} else if (b === 'somewhere') {
-				process.stdout.write('🟨');
-			} else {
-				process.stdout.write('⬛');
-			}
-		});
+const printUsedLetters = () => {
+	const letters = 'abcdefghijklmonpqrstuvwxyz'.split('');
+	letters.forEach((l) => {
+		if (attemptedLetters[l] === 'correct') {
+			process.stdout.write(chalk.white.bold.bgGreen(' ' + l + ' '));
+		} else if (attemptedLetters[l] === 'somewhere') {
+			process.stdout.write(chalk.black.bold.bgYellowBright(' ' + l + ' '));
+		} else if (attemptedLetters[l] === 'incorrect') {
+			process.stdout.write(chalk.white.bold.bgBlack(' ' + l + ' '));
+		} else {
+			process.stdout.write(chalk.white.bold.bgGray(' ' + l + ' '));
+		}
 	});
-	console.log();
+	console.log('\n');
+};
+
+const printBoard = () => {
 	boardState.forEach((a, firstIndex) => {
 		if (!a.length) return;
 		console.log();
@@ -177,6 +218,23 @@ const printBoard = () => {
 	console.log('\n');
 };
 
+const printEmojiBoard = () => {
+	boardState.forEach((a) => {
+		if (!a.length) return;
+		console.log();
+		a.forEach((b) => {
+			if (b === 'correct') {
+				process.stdout.write('🟩');
+			} else if (b === 'somewhere') {
+				process.stdout.write('🟨');
+			} else {
+				process.stdout.write('⬛');
+			}
+		});
+	});
+	console.log();
+};
+
 const gameLoop = async () => {
 	let hasWon = false;
 	for (let i = 0; i < 6; i++) {
@@ -197,7 +255,11 @@ const gameLoop = async () => {
 
 			generateAnswerGrid(i);
 
+			if (showEmojiBoard) printEmojiBoard();
+
 			printBoard();
+
+			printUsedLetters();
 
 			if (hasWon) {
 				figlet('YOU WON!', async function (err, data) {
@@ -215,8 +277,7 @@ const gameLoop = async () => {
 	}
 
 	if (!hasWon) {
-		const date = new Date();
-		const correctWord = Da(date);
+		const correctWord = Da(today);
 		console.log();
 		const ruleText = chalkAnimation.pulse(
 			'💀 Correct answer was ' + correctWord
@@ -239,7 +300,7 @@ const gameLoop = async () => {
 			'./data.json',
 			JSON.stringify({
 				hasWon: hasWon,
-				date: new Date(),
+				date: today,
 			})
 		);
 	} catch (e) {
