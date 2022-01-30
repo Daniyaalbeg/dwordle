@@ -1,0 +1,22 @@
+{
+  "name": "dwordle",
+  "version": "1.0.2",
+  "description": "A wordle clone for the command line",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "bin": "./index.js",
+  "keywords": ["worlde", "cli", "game", "fun", "daily"],
+  "author": "Daniyaal Beg",
+  "license": "ISC",
+  "dependencies": {
+    "chalk": "^5.0.0",
+    "chalk-animation": "^1.3.0",
+    "figlet": "^1.5.2",
+    "gradient-string": "^2.0.0",
+    "inquirer": "^8.2.0",
+    "nanospinner": "^1.0.0"
+  }
+}
