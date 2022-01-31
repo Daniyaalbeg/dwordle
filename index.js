@@ -7,9 +7,10 @@ import chalkAnimation from 'chalk-animation';
 import figlet from 'figlet';
 import { createSpinner } from 'nanospinner';
 import { words, wordOptions } from './words.js';
-import { writeFileSync } from 'fs';
+import { writeFileSync, readFileSync, readFile } from 'fs';
 import { exit } from 'process';
 import yargs from 'yargs';
+import checkForUpdate from 'update-check';
 
 // Utils
 const sleep = (ms = 1000) => new Promise((r) => setTimeout(r, ms));
@@ -61,28 +62,44 @@ let showEmojiBoard = false;
 
 const today = new Date();
 
+const checkIfUpdate = () => {
+	let update = null;
+
+	try {
+		readFile('./package.json', async (err, data) => {
+			update = await checkForUpdate(JSON.parse(data));
+		});
+	} catch (err) {
+		console.error(`Failed to check for updates: ${err}`);
+	}
+
+	if (update) {
+		console.log(`The latest version is ${update.latest}. Please update!`);
+	}
+};
+
 const initialCheck = async () => {
 	var argv = yargs(process.argv.slice(2)).default('e', false).argv;
 	showEmojiBoard = argv.e;
 
-	// try {
-	// 	const fileData = readFileSync('./data.json', { encoding: 'utf8' });
-	// 	const d = JSON.parse(fileData);
-	// 	if (today.getDate() === new Date(d.date).getDate()) {
-	// 		console.log(
-	// 			chalk.red(
-	// 				`You have already attemped this puzzle today and ${
-	// 					d.hasWon ? 'won' : 'lost'
-	// 				}. The word for today was ${Da(today)}. Next puzzle is available in ${
-	// 					24 - today.getHours()
-	// 				} hours.`
-	// 			)
-	// 		);
-	// 		exit();
-	// 	}
-	// } catch {
-	// 	// Do nothing i guess
-	// }
+	try {
+		const fileData = readFileSync('./data.json', { encoding: 'utf8' });
+		const d = JSON.parse(fileData);
+		if (today.getDate() === new Date(d.date).getDate()) {
+			console.log(
+				chalk.red(
+					`You have already attemped this puzzle today and ${
+						d.hasWon ? 'won' : 'lost'
+					}. The word for today was ${Da(today)}. Next puzzle is available in ${
+						24 - today.getHours()
+					} hours.`
+				)
+			);
+			exit();
+		}
+	} catch {
+		// Do nothing i guess
+	}
 };
 
 const welcome = async () => {
@@ -155,22 +172,35 @@ const checkAnswer = async (answer) => {
 	}
 };
 
+const changeItem = (arr, item) => {
+	const index = arr.indexOf(item);
+	if (index > -1) {
+		arr[index] = 0; // 2nd parameter means remove one item only
+	}
+};
+
 const generateAnswerGrid = (i) => {
 	const correctWord = Da(today);
+	const lettersUsed = correctWord.split('');
 	for (let j = 0; j < 5; j++) {
-		if (wordAttempts[i].split('')[j] === correctWord.split('')[j]) {
+		if (wordAttempts[i].split('')[j] === lettersUsed[j]) {
 			attemptedLetters[wordAttempts[i].split('')[j]] = 'correct';
 			boardState[i][j] = 'correct';
-		} else if (correctWord.split('').includes(wordAttempts[i].split('')[j])) {
+			changeItem(lettersUsed, wordAttempts[i].split('')[j]);
+		} else if (lettersUsed.includes(wordAttempts[i].split('')[j])) {
 			if (attemptedLetters[wordAttempts[i].split('')[j]] !== 'correct') {
 				attemptedLetters[wordAttempts[i].split('')[j]] = 'somewhere';
 			}
 			boardState[i][j] = 'somewhere';
+			changeItem(lettersUsed, wordAttempts[i].split('')[j]);
 		} else {
-			attemptedLetters[wordAttempts[i].split('')[j]] = 'incorrect';
+			if (attemptedLetters[wordAttempts[i].split('')[j]] === 0) {
+				attemptedLetters[wordAttempts[i].split('')[j]] = 'incorrect';
+			}
 			boardState[i][j] = 'incorrect';
 		}
 	}
+	// console.log(attemptedLetters);
 };
 
 const printUsedLetters = () => {
@@ -310,6 +340,7 @@ const gameLoop = async () => {
 
 const main = async () => {
 	console.clear();
+	checkIfUpdate();
 	await initialCheck();
 	await welcome();
 	await rules();

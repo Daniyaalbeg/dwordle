@@ -24,6 +24,7 @@
     "gradient-string": "^2.0.0",
     "inquirer": "^8.2.0",
     "nanospinner": "^1.0.0",
+    "update-check": "^1.5.4",
     "yargs": "^17.3.1"
   }
 }
