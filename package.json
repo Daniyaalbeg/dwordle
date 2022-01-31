@@ -1,6 +1,6 @@
 {
   "name": "dwordle",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "A wordle clone for the command line",
   "main": "index.js",
   "type": "module",
