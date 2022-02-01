@@ -340,7 +340,7 @@ const gameLoop = async () => {
 
 const main = async () => {
 	console.clear();
-	checkIfUpdate();
+	// checkIfUpdate();
 	await initialCheck();
 	await welcome();
 	await rules();
