@@ -15,7 +15,7 @@ npm install -g dwordle
 You can run it by just typring dwordle. In addition you can use a flag to get access to the emoji board for sharing your result.
 
 ```bash
-dwordle -e tru
+dwordle -e true
 ```
 
 ## Contributing
